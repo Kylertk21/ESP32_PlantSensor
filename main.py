@@ -2,7 +2,6 @@ from machine import Pin, I2C
 from oled_lib import SSD1306_I2C
 from moisture_lib import read_moisture
 import time
-from datetime import datetime
 import network, urequests
 SENSOR_ID= 1
 API_URL = "http://192.168.0.19:5000/api/sensor"
@@ -26,25 +25,27 @@ def connect_wifi():
     print("connected:", wlan.ifconfig())
 
 
-def post_data(water_value):
+def post_data(water_value, sunlight_value):
     try:
         payload = {
             "sensor_id": SENSOR_ID,
                 "readings": {
                 "water": water_value,
-                "time": datetime.now()
-                
+                "sunlight": sunlight_value
             }
         }
         headers = {'Content-Type': 'application/json'}
-        response = urequests.post(API_URL, data=payload, headers=headers)
+        response = urequests.post(API_URL, json=payload, headers=headers)
         print(response.text)
         response.close()
     except Exception as e:
         print("Error", e)
 
+connect_wifi()
+
 while True:
     moisture = read_moisture()
+    post_data(moisture, 0)
     oled.fill(0)
     oled.text(moisture,0 , 0)
     oled.show()
