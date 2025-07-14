@@ -41,12 +41,15 @@ def post_data(water_value, sunlight_value):
     except Exception as e:
         print("Error", e)
 
+def populate_screen(moisture_value):
+    oled.fill(0)
+    oled.text(moisture, 0, 0)
+    oled.show()
+    time.sleep(1)
+
 connect_wifi()
 
 while True:
     moisture = read_moisture()
+    populate_screen(moisture)
     post_data(moisture, 0)
-    oled.fill(0)
-    oled.text(moisture,0 , 0)
-    oled.show()
-    time.sleep(1)
