@@ -1,6 +1,7 @@
 from machine import Pin, I2C
 from oled_lib import SSD1306_I2C
 from moisture_lib import read_moisture
+from light_lib import BH1750
 import time
 import network, urequests
 SENSOR_ID= 1
@@ -8,6 +9,8 @@ API_URL = "http://192.168.0.19:5000/api/sensor"
 
 SSID = "Die_Online"
 PASSWORD = "AKConquest420!"
+wlan = network.WLAN(network.STA_IF)
+ip_address = wlan.ifconfig()[0]
 
 i2c = I2C(0, scl=Pin(22), sda=Pin(21))
 oled_width = 128
@@ -15,14 +18,27 @@ oled_height = 64
 oled = SSD1306_I2C(oled_width, oled_height, i2c)
 
 def connect_wifi():
-    wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     if not wlan.isconnected():
         print("connecting to network...")
         wlan.connect(SSID, PASSWORD)
-        while not wlan.isconnected():
+
+        for _ in range(10):
+            if wlan.isconnected():
+                break
             time.sleep(1)
+        else:
+            print("Failed to connect")
+            return False
+
     print("connected:", wlan.ifconfig())
+    return True
+
+def read_light():
+    light_sensor = BH1750(i2c)
+    lux = light_sensor.luminance()
+    relative_light = light_sensor.map_value(lux)
+    return relative_light
 
 
 def post_data(water_value, sunlight_value):
@@ -38,18 +54,25 @@ def post_data(water_value, sunlight_value):
         response = urequests.post(API_URL, json=payload, headers=headers)
         print(response.text)
         response.close()
+        return True
     except Exception as e:
         print("Error", e)
+        return False
 
-def populate_screen(moisture_value):
+def populate_screen(moisture_value, light_value, connected, posted):
     oled.fill(0)
-    oled.text(moisture, 0, 0)
+    oled.text(f"{SSID if connected else 'No Conn'}", 0, 0)
+    oled.text(f"IP: {ip_address if connected else ""}", 0, 50)
+    oled.text("U" if posted else "N", 100, 0)
+    oled.text(f"M: {moisture_value}", 0, 20)
+    oled.text(f"L: {light_value}", 0, 30)
     oled.show()
-    time.sleep(1)
 
-connect_wifi()
+wifi_connected = connect_wifi()
 
 while True:
+    light = read_light()
     moisture = read_moisture()
-    populate_screen(moisture)
-    post_data(moisture, 0)
+    post_success = post_data(moisture, light)
+    populate_screen(moisture, light, wifi_connected, post_success)
+    time.sleep(10)

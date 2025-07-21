@@ -10,15 +10,15 @@ def map_value(value):
     moisture_percent = max(0, min(100, moisture_percent))
     
     if moisture_percent >= 80:
-        label = "very wet"
+        label = "Wet"
     elif moisture_percent >= 50:
-        label = "wet"
+        label = "Moist / Wet"
     elif moisture_percent >= 35:
-        label = "pretty wet"
+        label = "Moist"
     elif moisture_percent >= 20:
-        label = "dry"
+        label = "Dry / Moist"
     else:
-        label = "very dry"
+        label = "Dry"
 
     print(moisture_percent)
     return label
