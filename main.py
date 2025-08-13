@@ -5,6 +5,14 @@ from moisture_lib import read_moisture
 from light_lib import BH1750
 import time
 import network, urequests
+import json
+
+from umqtt_simple import MQTTClient
+
+CLIENT_NAME = "Basil_Sensor"
+BROKER_ADDR = "192.168.0.19"
+MQTT_TOPIC = "basil_sensor"
+
 SENSOR_ID= "Basil"
 API_URL = "http://192.168.0.19:5000/api/sensor"
 
@@ -34,6 +42,13 @@ def connect_wifi():
 
     print("connected:", wlan.ifconfig())
     return True
+
+def connect_mqtt():
+    print(f"Connecting to broker at {BROKER_ADDR}")
+    client = MQTTClient(CLIENT_NAME, BROKER_ADDR, keepalive=60)
+    client.connect()
+    print("Connected to broker")
+    return client
 
 def read_light():
     light_sensor = BH1750(i2c)
@@ -70,10 +85,13 @@ def populate_screen(moisture_value, light_value, connected, posted):
     oled.show()
 
 wifi_connected = connect_wifi()
+mqttc = connect_mqtt()
 
 while True:
     light = read_light()
     moisture = read_moisture()
+    mqttc.publish(MQTT_TOPIC, json.dumps({"light": light, "moisture": moisture}))
+
     post_success = post_data(moisture, light)
     populate_screen(moisture, light, wifi_connected, post_success)
 
