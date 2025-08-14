@@ -11,7 +11,7 @@ from umqtt_simple import MQTTClient
 
 CLIENT_NAME = "Basil_Sensor"
 BROKER_ADDR = "192.168.0.19"
-MQTT_TOPIC = "basil_sensor"
+MQTT_TOPIC = "sensor/basil"
 
 SENSOR_ID= "Basil"
 API_URL = "http://192.168.0.19:5000/api/sensor"
@@ -90,6 +90,7 @@ mqttc = connect_mqtt()
 while True:
     light = read_light()
     moisture = read_moisture()
+    time.sleep(1)
     mqttc.publish(MQTT_TOPIC, json.dumps({"light": light, "moisture": moisture}))
 
     post_success = post_data(moisture, light)
